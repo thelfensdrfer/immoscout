@@ -5,8 +5,6 @@ import re
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from keras.models import Sequential
-from keras.layers import Dense
 
 FILE = os.path.join(os.path.abspath(os.path.dirname(__file__)), '../data/hamburg_wohnungen.csv')
 
@@ -20,7 +18,7 @@ def parse_plz(address):
 
 
 def parse_parkplatz_type(parkplatz):
-    if (not parkplatz) or  (parkplatz == np.NaN):
+    if (not parkplatz) or (parkplatz == np.NaN):
         return None
 
     parkplatz = str(parkplatz).lower()
@@ -58,7 +56,7 @@ def parse_parkplatz_count(parkplatz):
 
 
 def convert_to_bool(val):
-    if (val) or (val == 1):
+    if val or (val == 1):
         return True
 
     if (not val) or (val == np.NaN):
@@ -145,7 +143,7 @@ def clean_data(debug=False):
     return df
 
 
-def train_model(df):
+def train_model(df, debug=False):
     x = df.drop("gesmiete", 1)
     x = map_strings_to_integers(x, "heizart")
     x = map_strings_to_integers(x, "heizung")
@@ -157,20 +155,6 @@ def train_model(df):
 
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.25, random_state=42)
 
-    # Creating a model
-    model = Sequential()
-    model.add(Dense(26, input_shape=(26,), activation='relu'))
-    model.add(Dense(10, activation='relu'))
-    model.add(Dense(3, activation='relu'))
-    model.add(Dense(1, activation='softmax'))
-
-    # Compiling model
-    model.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-
-    model.fit(x_train, y_train, epochs=5, batch_size=10)
-    scores = model.evaluate(x_test, y_test)
-    print("\nAccuracy: %.2f%%" % (scores[1] * 100))
-
 
 if __name__ == '__main__':
     parser = ArgumentParser()
@@ -178,4 +162,5 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     df = clean_data(debug=args.debug)
-    train_model(df)
+    print(df)
+    # train_model(df, debug=args.debug)
