@@ -1,10 +1,13 @@
+# coding=utf-8
 from argparse import ArgumentParser
 import os.path
 import re
 
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split
+from sklearn import preprocessing
+from keras.models import Sequential
+from keras.layers import Dense
 
 FILE = os.path.join(os.path.abspath(os.path.dirname(__file__)), '../data/hamburg_wohnungen.csv')
 
@@ -144,16 +147,30 @@ def clean_data(debug=False):
 
 
 def train_model(df, debug=False):
-    x = df.drop("gesmiete", 1)
-    x = map_strings_to_integers(x, "heizart")
-    x = map_strings_to_integers(x, "heizung")
+    # Drop NaN
+    df = df.dropna(subset=['gesmiete'])
+
+    x = pd.DataFrame(df, columns=['parkplatz_type', 'whg_typ', 'zustand', 'sqm', 'zimmer'])
     x = map_strings_to_integers(x, "parkplatz_type")
     x = map_strings_to_integers(x, "whg_typ")
     x = map_strings_to_integers(x, "zustand")
 
-    y = df["gesmiete"]
+    y = pd.DataFrame(df, columns=["gesmiete"])
 
-    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.25, random_state=42)
+    # Normalize values
+    x_norm = (x - x.min()) / (x.max() - x.min())
+    y_norm = (y - y.min()) / (y.max() - y.min())
+
+    model = Sequential()
+    model.add(Dense(5, input_dim=5, activation='relu'))
+    #model.add(Dense(2, activation='relu'))
+    model.add(Dense(1, activation='sigmoid'))
+
+    model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+    model.fit(x_norm, y_norm, epochs=5, batch_size=10)
+
+    scores = model.evaluate(x_norm, y_norm)
+    print("\n%s: %.2f%%" % (model.metrics_names[1], scores[1] * 100))
 
 
 if __name__ == '__main__':
@@ -162,5 +179,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     df = clean_data(debug=args.debug)
-    print(df)
-    # train_model(df, debug=args.debug)
+    train_model(df, debug=args.debug)
